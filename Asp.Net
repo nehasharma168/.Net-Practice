@@ -1,0 +1,84 @@
+Image Upload Code
+
+
+
+
+
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Configuration;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Web.UI.HtmlControls;
+using System.IO; 
+
+public partial class _Default : System.Web.UI.Page 
+{
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        DataTable dt = new DataTable(); 
+        String strConnString = System.Configuration.ConfigurationManager.ConnectionStrings["conString"].ConnectionString;
+        string strQuery = "select * from ImageDetails";
+        SqlCommand cmd = new SqlCommand(strQuery);
+        SqlConnection con =  new SqlConnection(strConnString);
+        SqlDataAdapter sda = new SqlDataAdapter();
+        cmd.CommandType = CommandType.Text;
+        cmd.Connection = con;
+        try
+        {
+            con.Open();
+            sda.SelectCommand = cmd;
+            sda.Fill(dt);
+            GridView1.DataSource = dt;
+            GridView1.DataBind();  
+        }
+        catch (Exception ex)
+        {
+            Response.Write(ex.Message);
+        }
+        finally
+        {
+            con.Close();
+            sda.Dispose();
+            con.Dispose();
+        } 
+    }
+    protected void btnUpload_Click(object sender, EventArgs e)
+    {
+        if (FileUpload1.PostedFile != null)
+        {
+            string FileName = Path.GetFileName(FileUpload1.PostedFile.FileName);  
+
+            //Save files to disk
+            FileUpload1.SaveAs(Server.MapPath("images/" +  FileName));
+
+            //Add Entry to DataBase
+            String strConnString = System.Configuration.ConfigurationManager.ConnectionStrings["conString"].ConnectionString;
+            SqlConnection con = new SqlConnection(strConnString);
+            string strQuery = "insert into ImageDetails (FileName, FilePath) values(@FileName, @FilePath)";
+            SqlCommand cmd = new SqlCommand(strQuery);
+            cmd.Parameters.AddWithValue("@FileName", FileName);
+            cmd.Parameters.AddWithValue("@FilePath", "images/" + FileName);  
+            cmd.CommandType = CommandType.Text;
+            cmd.Connection = con;
+            try
+            {
+                con.Open();
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+            finally
+            {
+                con.Close();
+                con.Dispose();
+            }
+        }
+    }
+}
